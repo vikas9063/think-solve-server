@@ -1,11 +1,13 @@
 package com.vikky.app.service.impl;
 
 import java.sql.Timestamp;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,6 +153,11 @@ public class UserServiceImpl implements UserService {
 			UserEntity user = this.usersRepo.findByUserEmail(userName)
 					.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 			Set<UserDesignationEntity> userDesignation = user.getUserDesignation();
+			// sorting based on date
+			userDesignation = userDesignation.stream()
+	        .sorted(Comparator.comparing(UserDesignationEntity::getDesignatedOn).reversed())
+	        .collect(Collectors.toSet());
+
 			UserOtherDetailsEntity otherDetails = user.getOtherDetails();
 
 			UserResponseDto userResponse = this.modelMapper.map(user, UserResponseDto.class);
@@ -162,8 +169,7 @@ public class UserServiceImpl implements UserService {
 			if (profile != null) {
 				String fileBase64 = FileUtils.getFileBase64(profile.getProfileImgLocation());
 				userResponse.setProfile(UserProfileResponse.builder().imageBase64(fileBase64)
-						.imageExtension(profile.getImageExtension()).build());
-				
+						.imageExtension(profile.getImageExtension()).build());				
 			}
 			return ProfileInfoResponseDto.builder().message("Profile Info fetched successfully").status("success")
 					.userInfo(userResponse).build();
